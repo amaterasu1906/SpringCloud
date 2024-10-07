@@ -1,0 +1,27 @@
+spring:
+    cloud:
+        gateway:
+            routes:
+                -   id: msvc-products
+                    uri: lb://msvc-products
+                    predicates:
+                        -   Path=/api/products/**
+                        # -   Header=token, 12345 | Expresion regular[\d+]
+                        # -   Method=GET, POST
+                        # -   Query=color, verde
+                        # -   Cookie=color, azul
+                        # -   Header=Content-Type, application/json
+                    filters:
+                        -   StripPrefix=2
+                        -   NuevoNombreCookieGateway=Mensaje Personalizado, User3, GTIM3
+                -   id: msvc-items
+                    uri: lb://msvc-items
+                    predicates:
+                        -   Path=/api/items/**
+                    filters:
+                        -   StripPrefix=2
+                        -   AddRequestHeader=token-request, alguntoken123
+                        -   AddResponseHeader=token-response, alguntokenresponse123
+                        -   AddRequestParameter=name, GTIM
+                        -   SetResponseHeader=Content-Type, application/json
+
