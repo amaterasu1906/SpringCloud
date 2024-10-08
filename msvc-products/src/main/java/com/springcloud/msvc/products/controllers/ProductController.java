@@ -1,10 +1,5 @@
 package com.springcloud.msvc.products.controllers;
 
-import org.springframework.web.bind.annotation.RestController;
-
-import com.springcloud.msvc.products.entities.Product;
-import com.springcloud.msvc.products.services.ProductService;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +7,10 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.springcloud.msvc.products.entities.Product;
+import com.springcloud.msvc.products.services.ProductService;
 
 @RestController
 public class ProductController {
@@ -28,11 +27,11 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Product> details(@PathVariable Long id) throws InterruptedException {
-        if(id.equals(10L)){
+        if(id.equals(12L)){
             throw new IllegalStateException("Producto no encontrado!");
         }
-        if(id.equals(11L)){
-            TimeUnit.SECONDS.sleep(5L);
+        if(id.equals(15L)){
+            TimeUnit.SECONDS.sleep(2L);
         }
 
         Optional<Product> productOptinal = this.productService.findById(id);

@@ -1,15 +1,10 @@
 package com.springcloud.msvc.items.controllers;
 
-import org.springframework.web.bind.annotation.RestController;
-
-import com.springcloud.msvc.items.models.Item;
-import com.springcloud.msvc.items.models.Product;
-import com.springcloud.msvc.items.services.ItemService;
-
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +14,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.springcloud.msvc.items.models.Item;
+import com.springcloud.msvc.items.models.Product;
+import com.springcloud.msvc.items.services.ItemService;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 
 @RestController
 public class ItemController {
@@ -52,6 +55,49 @@ public class ItemController {
         if (itemOptional.isPresent())
             return ResponseEntity.ok(itemOptional.get());
         return ResponseEntity.status(404).body(Collections.singletonMap("messages", "Id not Found"));
+    }
+    /*
+     * Generamos el CircuitBreaker con la configuracion de items en application.yml
+     * se llama a getFallBackMethodProduct para el camino alternativo
+     */
+    @CircuitBreaker(name="items", fallbackMethod = "getFallBackMethodProduct")
+    @GetMapping("/details/{id}")
+    public ResponseEntity<Object> detailsAnnotationCircuit(@PathVariable Long id) {
+        Optional<Item> itemOptional = service.findById(id);
+        if (itemOptional.isPresent())
+            return ResponseEntity.ok(itemOptional.get());
+        return ResponseEntity.status(404).body(Collections.singletonMap("messages", "Id not Found"));
+    }
+
+    /*
+     * TimeLimiter - CompletableFuture permite calcular el tiempo de ejecucion de la funcion service.findById
+     * para poder validar si entra en timeout
+     * se llama a getFallBackMethodProduct2 para el camino alternativo
+     */
+    @CircuitBreaker(name="items", fallbackMethod="getFallBackMethodProduct2")
+    @TimeLimiter(name="items")
+    @GetMapping("/details2/{id}")
+    public CompletableFuture<Object> detailsAnnotationTimeLimiter(@PathVariable Long id) {
+        return CompletableFuture.supplyAsync( () -> { 
+            Optional<Item> itemOptional = service.findById(id);
+            if (itemOptional.isPresent())
+                return ResponseEntity.ok(itemOptional.get());
+            return ResponseEntity.status(404).body(Collections.singletonMap("messages", "Id not Found"));
+        });
+    }
+
+    public CompletableFuture<Object> getFallBackMethodProduct2(Throwable e){
+        return CompletableFuture.supplyAsync( () -> getFallBackMethodProduct(e));
+    }
+
+    public ResponseEntity<Object> getFallBackMethodProduct(Throwable e){
+        logger.error(e.getMessage());
+        Product product = new Product();
+        product.setCreateAt(LocalDate.now());
+        product.setId(1L);
+        product.setName("Camara Sony");
+        product.setPrice(500.00);
+        return ResponseEntity.ok(new Item(product, 5));
     }
 
 }
