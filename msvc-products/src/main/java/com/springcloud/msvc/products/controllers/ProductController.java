@@ -7,6 +7,7 @@ import com.springcloud.msvc.products.services.ProductService;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +27,14 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> details(@PathVariable Long id) {
+    public ResponseEntity<Product> details(@PathVariable Long id) throws InterruptedException {
+        if(id.equals(10L)){
+            throw new IllegalStateException("Producto no encontrado!");
+        }
+        if(id.equals(11L)){
+            TimeUnit.SECONDS.sleep(5L);
+        }
+
         Optional<Product> productOptinal = this.productService.findById(id);
         if (productOptinal.isPresent())
             return ResponseEntity.ok(productOptinal.orElseThrow());
